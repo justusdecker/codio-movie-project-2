@@ -5,92 +5,119 @@ import matplotlib.pyplot as plt
 from bin.constants import *
 from bin.modules import *
 
+from os import listdir
+from os.path import isfile
+from json import load, dumps, JSONDecodeError
+
+class Movie:
+    def __init__(self,movie_data: dict):
+        self.movie_data = movie_data
+
+
+    def asdict(self) -> dict:
+        """
+        Used to default some values e.g. on save
+        """
+        return {
+            'title': self.title,
+            'rating': self.rating,
+            'release_year': self.release_year
+        }
+    @property
+    def title(self) -> str:
+        return self.movie_data.get('title','n.a.')
+    @title.setter
+    def title(self, value: str):
+        self.movie_data['title'] = value
+    @property
+    def rating(self) -> int:
+        return self.movie_data.get('rating',0)
+    @rating.setter
+    def rating(self, value: int):
+        self.movie_data['rating'] = value
+    @property
+    def release_year(self) -> int:
+        return self.movie_data.get('release_year',0)
+    @release_year.setter
+    def release_year(self, value: int):
+        self.movie_data['release_year'] = value
+    
+
 class MovieRank:
     def __init__(self):
-        self.movies = {
-        "The Shawshank Redemption": 9.5,
-        "Pulp Fiction": 8.8,
-        "The Room": 3.6,
-        "The Godfather": 9.2,
-        "The Godfather: Part II": 9.0,
-        "The Dark Knight": 9.0,
-        "12 Angry Men": 8.9,
-        "Everything Everywhere All At Once": 8.9,
-        "Forrest Gump": 8.8,
-        "Star Wars: Episode V": 8.7
-        }
-        
-    def list_movies(self):
-        """
-        Prints a formatted list of all movies currently stored in the collection.
+        self.isrunning = True
+        self.load_movies()
 
-        This method first displays the total number of movies. Then, it prints a header
-        for "Movie" and "Rating" columns. Finally, it iterates through each movie
-        in the `self.movies` dictionary and prints its title and corresponding rating
-        in a clean, tabular format.
-        """
+    @property
+    def titles(self) -> list[str]:
+        return [i.title for i in self.movies]
+
+    def save_movies(self):
+        with open(f'movies.json', 'w') as file_write:
+            file_write.write(dumps([movie.asdict() for movie in self.movies],indent=4))
+    
+    def load_movies(self):
+        self.movies: list[Movie] = []
+        file_name = f'movies.json'
+        if isfile(file_name):
+            try:
+                with open(file_name) as file_read:
+                    movies_json = load(file_read)
+                    if not isinstance(movies_json,list):
+                        raise TypeError()
+                    self.movies = [Movie(movie) for movie in movies_json]
+                    
+            except JSONDecodeError:
+                print(f'Cant load from file: {file_name} ERROR: JSONDE')
+            except TypeError:
+                print(f'Cant load from file: {file_name} ERROR: TE')
+        
+    
+    def list_movies(self):
+
         print(f"Movies in total: {len(self.movies)}")
-        print(f"{'Movie':<25} {'Rating':<7}")
-        for key in self.movies:
-            print(f"{key:<25} {self.movies[key]:<7}")
+        print(f"{'Movie':<45} {'Rating':<7} {'Release':<7}")
+        for movie in self.movies:
+            print(f"{movie.title:<45} {movie.rating:<7} {movie.release_year}")
             
     def add_movie(self):
-        """
-        Prompts the user to add a new movie and its rating to the collection.
 
-        This method guides the user through entering a movie title and its rating.
-        It performs validation on the rating to ensure it's a numeric value and
-        within the acceptable range (0-10). If the rating is invalid, an error
-        message is displayed, and the process is stopped.
-
-        If the movie title does not already exist in the `self.movies` dictionary,
-        the new movie and its rating are added. If the movie title already exists,
-        it will not be updated by this method (it will simply be skipped, as the
-        `if title not in self.movies` condition prevents overwriting).
-        """
         title =  get_user_input_colorized("Movie title: ")
         rating = convert_to_float(get_user_input_colorized("Movie rating: "))
+        release_year = convert_to_float(get_user_input_colorized("Movie release year: "))
+        
+        if release_year < 1891:
+            error(MSG_KINETOSSCOPE_NOT_INVENTED_YET)
+            return
         if not rating: 
             error(MSG_RATING_IS_NOT_NUMERIC)
             return
         if rating > 10:
             error(MSG_WRONG_RATING)
             return
-        if title not in self.movies:
-            self.movies[title] = rating
+        
+        if title not in [i.title for i in self.movies]:
+            
+            temp_movie = Movie(
+                {
+                    "title": title,
+                    'rating': rating,
+                    "release_year": int(release_year)
+                }
+            )
+            self.movies.append(temp_movie)
             
     def remove_movie(self):
-        """
-        Prompts the user for a movie title and removes it from the collection.
 
-        This method asks the user for the title of the movie they wish to remove.
-        It checks if the provided title exists as a key in the `self.movies` dictionary.
-        If found, the movie and its rating are removed. If the movie is not found,
-        an `MSG_MOVIE_DOESNT_EXIST` error message is displayed.
-        """
         title =  get_user_input_colorized("Movie title: ")
-        if title in self.movies:
-            self.movies.pop(title)
+        if title in self.titles:
+            
+            self.movies.pop(self.titles.index(title))
         else:
             error(MSG_MOVIE_DOESNT_EXIST)
             
     def edit_movie(self):
-        """
-        Allows the user to update the rating of an existing movie.
 
-        This method first prompts the user to enter the title of the movie they wish to edit.
-        It checks if the movie exists in the `self.movies` collection. If the movie
-        is not found, an error message (`MSG_MOVIE_DOESNT_EXIST`) is displayed, and the
-        function returns.
-
-        If the movie is found, the user is then prompted to enter a new rating for it.
-        The new rating is validated to ensure it's a numeric value and is within the
-        acceptable range (0-10). Invalid ratings will result in an error message
-        (`MSG_RATING_IS_NOT_NUMERIC` or `MSG_WRONG_RATING`) and the function returning.
-
-        Upon successful validation, the existing movie's rating in `self.movies` is
-        updated with the new value.
-        """
         title =  get_user_input_colorized("Movie title: ")
         
         if title not in self.movies:
@@ -105,8 +132,8 @@ class MovieRank:
         if rating > 10:
             error(MSG_WRONG_RATING)
             return
-        if title in self.movies:
-            self.movies[title] = rating
+        if title in self.titles:
+            self.movies[self.titles.index(title)].rating = rating
         else:
             error(MSG_MOVIE_DOESNT_EXIST)
             
@@ -199,7 +226,10 @@ class MovieRank:
         """ Generates and displays a histogram of movie ratings. """
         plt.hist([self.movies[i] for i in self.movies])
         plt.show()
-        
+    def byebye(self):
+        """ The last thing the app will do before close """
+        self.save_movies()
+        print('bye!')
     def update(self,inp):
         """
         Acts as a dispatcher for various movie management operations based on user input.
@@ -208,6 +238,9 @@ class MovieRank:
         and calls the corresponding movie-related method within the class.
         """
         match inp:
+            case '0': 
+                self.isrunning = False
+                self.byebye()
             case "1": self.list_movies()
             case "2": self.add_movie()
             case "3": self.remove_movie()
@@ -220,7 +253,7 @@ class MovieRank:
             case _: error(MSG_INVALID_INPUT)         
 
 def main():
-    while 1:
+    while MR.isrunning:
         print("""\033[J
 ********** My Movies Database **********
 
