@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from bin.constants import *
 from bin.modules import *
 
-from os import listdir
 from os.path import isfile
 from json import load, dumps, JSONDecodeError
 
