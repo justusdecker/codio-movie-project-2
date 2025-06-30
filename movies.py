@@ -227,19 +227,10 @@ class MovieRank:
         a searching method to get movies
         """
         value = get_user_input_colorized("Search: ").lower()
-        low_movies = [m.title.lower() for m in self.movies]
-        results = 0
-        if value in low_movies:
-            #normal_movies[low_movies.index(value)]
-            results += 1
-            movie = self.movies[low_movies.index(value)]
-            
-            print(f"{movie.title:<45} {movie.rating:<7} {movie.release_year}")
-        if not results:
-            for movie in self.movies:
-                if compare_two_strings(value, movie.title):
-                    print(f"{movie.title:<45} {movie.rating:<7} {movie.release_year}")
-    
+        for movie in self.movies:
+            if value.lower() in movie.title.lower():
+                print(f"{movie.title:<45} {movie.rating:<7} {movie.release_year}")
+
     def plot_movies(self):
         """ Generates and displays a histogram of movie ratings. """
         plt.hist([i.rating for i in self.movies])
