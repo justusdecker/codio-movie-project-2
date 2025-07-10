@@ -195,19 +195,25 @@ class MovieRank:
         worst, rating_w = [],11
         best, rating_b = [],-1
         
+        ma, mi = max([i.rating for i in self.movies]) , min([i.rating for i in self.movies])
         for movie in self.movies:
-            if movie.rating > rating_b:
+            if movie.rating == ma:
                 best.append(movie.title)
                 rating_b = movie.rating
-            if movie.rating < rating_w:
+            if movie.rating == mi:
                 worst.append(movie.title)
                 rating_w = movie.rating
-        
-        print(f"Average rating: {round(average,2)}. Median rating: {median}.\n{"-"*15}")
-        print(f'Best Rating{"s" if len(best) > 1 else ""}\n{"-"*15}')
+
+        print(f"Average rating: {round(average,2)}. Median rating: {median}.\n")
+        print("-"*15) # fix for: SyntaxError: f-string: expecting '}' I don't know why this is happening in codio!
+        tmp = "s" if len(best) > 1 else ""
+        print(f'Best Rating{tmp}\n')
+        print("-"*15) # fix for: SyntaxError: f-string: expecting '}'
         for b in best:
             print(f"Rating: {b} with {rating_b}/10")
-        print(f'Worst Rating{"s" if len(worst) > 1 else ""}\n{"-"*15}')
+        tmp = "s" if len(worst) > 1 else ""
+        print(f'Worst Rating{tmp}\n')
+        print("-"*15) # fix for: SyntaxError: f-string: expecting '}'
         for w in worst:
             print(f"Rating: {w} with {rating_w}/10. ")
         
@@ -219,7 +225,7 @@ class MovieRank:
     def print_movies_by_rank(self):
         """ get all movies by rank and print it in a formatted way"""
         listed = [[i.rating,i.title] for i in self.movies]
-        listed = sorted(listed,key=lambda x: x[1],reverse=True)
+        listed = sorted(listed,key=lambda x: x[0],reverse=True)
         for n, r in listed:
             print(f"{r:<35} {n}/10")
     def print_search(self):
